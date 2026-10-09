@@ -2,6 +2,40 @@
 
 Secure backup and restore tool for Open WebUI with mandatory age encryption.
 
+## Knowledge permission compatibility
+
+Knowledge restore requires a verified legacy `access_control` API contract.
+Before restoring a collection archive, the tool validates every collection's
+permission format and reads the destination's production `/api/version`
+endpoint. Currently only the exact official version `0.6.18` is allowlisted;
+unknown versions, custom version suffixes, unavailable version information and
+newer contracts stop that restore before its first write. No OpenAPI endpoint
+or development-mode server setting is required.
+
+Archives containing `access_grants` are refused, including `null`, empty arrays,
+and mixed old/new fields. The field is preserved when a knowledge object is
+read and serialized for backup, but is not translated into `access_control`.
+User and group IDs cannot safely be inferred across installations. Legacy
+archives retain their existing identifiers; operators must independently ensure
+those identifiers refer to the intended destination principals.
+
+Do not downgrade a server or delete permission fields to force an import. For
+unsupported destinations, use a version-compatible recovery method such as the
+official full-volume backup procedure. An older tool may already have discarded
+newer permission fields; this check cannot reconstruct or detect missing
+historical data. See [the pinned contract evidence](docs/knowledge-permission-contracts.md)
+for the narrow allowlist and the requirements for adding another version.
+
+This is a compatibility guard, not support for restoring knowledge to newer
+Open WebUI releases. It trusts the server's version response; forks retaining
+an official version string are not verified. It does not verify effective
+access, identity mapping, or end-to-end recovery. Other resource formats and
+general partial-restore error handling are unchanged. Create and update recheck
+the version rather than cache it. A compatibility refusal stops the current
+restore operation, including subsequent file synchronization and other resource
+writes. Writes completed before that refusal remain; no rollback or atomic
+restore is provided. An upgrade after the last check is still possible.
+
 ## Features
 
 - **Unified Commands** - Simple backup/restore/purge with selective type filtering

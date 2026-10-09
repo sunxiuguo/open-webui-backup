@@ -1,5 +1,7 @@
 package openwebui
 
+import "encoding/json"
+
 // KnowledgeBase represents a knowledge base from the API
 type KnowledgeBase struct {
 	ID            string                 `json:"id"`
@@ -8,6 +10,7 @@ type KnowledgeBase struct {
 	Description   string                 `json:"description"`
 	Data          *KnowledgeData         `json:"data"`
 	Meta          map[string]interface{} `json:"meta"`
+	AccessGrants  json.RawMessage        `json:"access_grants,omitempty"`
 	AccessControl map[string]interface{} `json:"access_control"`
 	CreatedAt     int64                  `json:"created_at"`
 	UpdatedAt     int64                  `json:"updated_at"`

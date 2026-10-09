@@ -156,6 +156,9 @@ func extractUserFromZip(zipPath string) (*openwebui.User, error) {
 // RestoreKnowledge restores a knowledge base from a backup ZIP file
 // If overwrite is true, existing files will be replaced; otherwise they are skipped
 func RestoreKnowledge(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := preflightKnowledgeArchive(client, zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting restore from: %s", zipPath)
 
 	// Extract knowledge base and files from ZIP
@@ -466,6 +469,9 @@ func syncFiles(client *openwebui.Client, knowledgeID string, backupFiles map[str
 // RestoreModel restores a model from a backup ZIP file
 // If overwrite is true, existing model with same ID will be replaced
 func RestoreModel(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := preflightKnowledgeArchive(client, zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting model restore from: %s", zipPath)
 
 	// Extract model from ZIP
@@ -560,6 +566,9 @@ func restoreKnowledgeBasesFromZip(client *openwebui.Client, zipPath string, over
 	// Restore collection-type knowledge items (full KBs)
 	collectionIDMap, err := restoreCollectionKnowledgeItems(r, client, overwrite)
 	if err != nil {
+		if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+			return nil, err
+		}
 		logrus.Warnf("Failed to restore collection knowledge items: %v", err)
 	}
 	for oldID, newID := range collectionIDMap {
@@ -791,6 +800,9 @@ func restoreCollectionKnowledgeItems(r *zip.ReadCloser, client *openwebui.Client
 
 			createResp, err := client.CreateKnowledge(form)
 			if err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return nil, fmt.Errorf("failed to create KB %s: %w", entry.kb.Name, err)
+				}
 				logrus.Warnf("Failed to create KB %s: %v", entry.kb.Name, err)
 				continue
 			}
@@ -821,6 +833,9 @@ func restoreCollectionKnowledgeItems(r *zip.ReadCloser, client *openwebui.Client
 
 			// Update metadata if needed
 			if err := updateKnowledgeMetadata(client, existingKB, entry.kb); err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return nil, fmt.Errorf("failed to update KB %s: %w", entry.kb.Name, err)
+				}
 				logrus.Warnf("Failed to update KB metadata for %s: %v", entry.kb.Name, err)
 			}
 
@@ -1204,6 +1219,11 @@ func extractFileFromZip(zipPath string) (*openwebui.FileExport, error) {
 // RestoreSelective performs a selective restore from a unified backup file based on the provided options
 // progressCallback is an optional callback function for progress updates (can be nil)
 func RestoreSelective(client *openwebui.Client, inputFile string, options *SelectiveRestoreOptions, overwrite bool, progressCallback ProgressCallback) error {
+	if options.Knowledge {
+		if err := preflightKnowledgeArchive(client, inputFile); err != nil {
+			return err
+		}
+	}
 	logrus.Info("Starting selective restore...")
 
 	if progressCallback != nil {
@@ -1276,6 +1296,9 @@ func RestoreSelective(client *openwebui.Client, inputFile string, options *Selec
 		if contains(metadata.ContainedTypes, "knowledge") {
 			logrus.Info("Restoring knowledge bases...")
 			if err := restoreKnowledgeBasesFromUnified(r, client, overwrite); err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return err
+				}
 				logrus.Warnf("Failed to restore some knowledge bases: %v", err)
 			}
 		} else {
@@ -1469,6 +1492,9 @@ func isUnifiedBackup(zipPath string) bool {
 
 // restoreFromUnifiedBackup restores all data from a unified backup ZIP
 func restoreFromUnifiedBackup(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := preflightKnowledgeArchive(client, zipPath); err != nil {
+		return err
+	}
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return fmt.Errorf("failed to open unified backup: %w", err)
@@ -1529,6 +1555,9 @@ func restoreFromUnifiedBackup(client *openwebui.Client, zipPath string, overwrit
 		case "knowledge":
 			logrus.Info("Restoring knowledge bases from unified backup...")
 			if err := restoreKnowledgeBasesFromUnified(r, client, overwrite); err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return err
+				}
 				logrus.Warnf("Failed to restore some knowledge bases: %v", err)
 			}
 		case "model":
@@ -1573,6 +1602,11 @@ func restoreFromUnifiedBackup(client *openwebui.Client, zipPath string, overwrit
 
 // restoreFromLegacyBackups restores from legacy separate ZIP files
 func restoreFromLegacyBackups(client *openwebui.Client, files []string, overwrite bool) error {
+	for _, file := range files {
+		if err := preflightKnowledgeArchive(client, file); err != nil {
+			return err
+		}
+	}
 	var modelFiles, kbFiles, toolFiles, promptFiles, fileFiles, chatFiles []string
 
 	for _, file := range files {
@@ -1601,6 +1635,9 @@ func restoreFromLegacyBackups(client *openwebui.Client, files []string, overwrit
 		for i, file := range modelFiles {
 			logrus.Infof("  %d/%d: %s", i+1, len(modelFiles), filepath.Base(file))
 			if err := RestoreModel(client, file, overwrite); err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return err
+				}
 				logrus.Warnf("  Failed: %v", err)
 			}
 		}
@@ -1611,6 +1648,9 @@ func restoreFromLegacyBackups(client *openwebui.Client, files []string, overwrit
 		for i, file := range kbFiles {
 			logrus.Infof("  %d/%d: %s", i+1, len(kbFiles), filepath.Base(file))
 			if err := RestoreKnowledge(client, file, overwrite); err != nil {
+				if errors.Is(err, openwebui.ErrKnowledgePermissionCompatibility) {
+					return err
+				}
 				logrus.Warnf("  Failed: %v", err)
 			}
 		}

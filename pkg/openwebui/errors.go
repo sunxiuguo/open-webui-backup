@@ -1,6 +1,13 @@
 package openwebui
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+// ErrKnowledgePermissionCompatibility identifies a refusal to use an
+// unverified destination permission contract. Restore callers must stop.
+var ErrKnowledgePermissionCompatibility = errors.New("knowledge permission compatibility refusal")
 
 // APIError represents an error from the Open WebUI API
 type APIError struct {

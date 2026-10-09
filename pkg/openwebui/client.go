@@ -82,6 +82,9 @@ func (c *Client) GetFile(fileID string) (*FileData, error) {
 
 // CreateKnowledge creates a new knowledge base
 func (c *Client) CreateKnowledge(form *KnowledgeForm) (*KnowledgeCreateResponse, error) {
+	if err := c.CheckKnowledgePermissions(); err != nil {
+		return nil, err
+	}
 	jsonData, err := json.Marshal(form)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal knowledge form: %w", err)
@@ -188,6 +191,9 @@ func (c *Client) GetKnowledgeByID(id string) (*KnowledgeBase, error) {
 
 // UpdateKnowledge updates an existing knowledge base
 func (c *Client) UpdateKnowledge(id string, form *KnowledgeForm) error {
+	if err := c.CheckKnowledgePermissions(); err != nil {
+		return err
+	}
 	jsonData, err := json.Marshal(form)
 	if err != nil {
 		return fmt.Errorf("failed to marshal knowledge form: %w", err)
