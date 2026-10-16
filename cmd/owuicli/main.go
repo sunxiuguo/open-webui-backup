@@ -61,6 +61,8 @@ func run() error {
 		rootCmd.AddCommand(cmd)
 	}
 
+	rootCmd.AddCommand(plugins.NewModernKnowledgeCommand(cfg))
+
 	// Execute root command
 	return rootCmd.Execute()
 }

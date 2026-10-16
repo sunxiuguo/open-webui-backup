@@ -629,3 +629,14 @@ See LICENSE file.
 ## Contributing
 
 Contributions welcome! Fork, create feature branch, add tests, submit PR.
+
+
+## Experimental opt-in modern knowledge bundles
+
+The original `backup`, `restore`, web UI and library defaults retain the legacy
+format/API behavior. They do not provide the modern graph guarantee. For a bounded
+Open WebUI **0.12.2**, owned-private, local, root-only knowledge workflow, use the
+separate `owuicli modern-knowledge` command. Backups still require age encryption;
+restores create new objects and emit durable private plaintext partial/success
+reports. This experimental proposal is **not real-backend accepted**; real indexing
+and retrieval acceptance remain incomplete. See [scope, commands, report contract and compatibility](OPTIN_KNOWLEDGE_COMPATIBILITY.md).

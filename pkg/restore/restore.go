@@ -65,6 +65,9 @@ func generateRandomPassword(length int) (string, error) {
 // Since passwords are not in the backup, a random password is generated
 // If overwrite is true, existing user with same ID will be replaced
 func RestoreUser(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting user restore from: %s", zipPath)
 
 	// Extract user from ZIP
@@ -156,6 +159,9 @@ func extractUserFromZip(zipPath string) (*openwebui.User, error) {
 // RestoreKnowledge restores a knowledge base from a backup ZIP file
 // If overwrite is true, existing files will be replaced; otherwise they are skipped
 func RestoreKnowledge(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting restore from: %s", zipPath)
 
 	// Extract knowledge base and files from ZIP
@@ -466,6 +472,9 @@ func syncFiles(client *openwebui.Client, knowledgeID string, backupFiles map[str
 // RestoreModel restores a model from a backup ZIP file
 // If overwrite is true, existing model with same ID will be replaced
 func RestoreModel(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting model restore from: %s", zipPath)
 
 	// Extract model from ZIP
@@ -874,6 +883,9 @@ func updateModelKnowledgeReferences(model *openwebui.Model, kbIDMap map[string]s
 // RestoreTool restores a tool from a backup ZIP file
 // If overwrite is true, existing tool with same ID will be replaced
 func RestoreTool(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting tool restore from: %s", zipPath)
 
 	// Extract tool from ZIP
@@ -957,6 +969,9 @@ func extractToolFromZip(zipPath string) (*openwebui.Tool, error) {
 // RestorePrompt restores a prompt from a backup ZIP file
 // If overwrite is true, existing prompt with same command will be replaced
 func RestorePrompt(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting prompt restore from: %s", zipPath)
 
 	// Extract prompt from ZIP
@@ -1038,6 +1053,9 @@ func extractPromptFromZip(zipPath string) (*openwebui.Prompt, error) {
 // RestoreChat restores a chat from a backup ZIP file
 // If overwrite is true, existing chat with same ID will be replaced
 func RestoreChat(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting chat restore from: %s", zipPath)
 
 	// Extract chat from ZIP
@@ -1100,6 +1118,9 @@ func extractChatFromZip(zipPath string) (*openwebui.Chat, error) {
 // RestoreFile restores a file from a backup ZIP file
 // If overwrite is true, existing file with same ID will be replaced
 func RestoreFile(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting file restore from: %s", zipPath)
 
 	// Extract file from ZIP
@@ -1204,6 +1225,9 @@ func extractFileFromZip(zipPath string) (*openwebui.FileExport, error) {
 // RestoreSelective performs a selective restore from a unified backup file based on the provided options
 // progressCallback is an optional callback function for progress updates (can be nil)
 func RestoreSelective(client *openwebui.Client, inputFile string, options *SelectiveRestoreOptions, overwrite bool, progressCallback ProgressCallback) error {
+	if err := rejectOptInArchive(inputFile); err != nil {
+		return err
+	}
 	logrus.Info("Starting selective restore...")
 
 	if progressCallback != nil {
@@ -1413,6 +1437,11 @@ func RestoreAll(client *openwebui.Client, inputDir string, overwrite bool) error
 		return nil
 	}
 
+	for _, archive := range files {
+		if err := rejectOptInArchive(archive); err != nil {
+			return err
+		}
+	}
 	// Check for unified backup
 	var unifiedBackup string
 	for _, file := range files {
@@ -1469,6 +1498,9 @@ func isUnifiedBackup(zipPath string) bool {
 
 // restoreFromUnifiedBackup restores all data from a unified backup ZIP
 func restoreFromUnifiedBackup(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return fmt.Errorf("failed to open unified backup: %w", err)
@@ -2043,6 +2075,9 @@ func restoreUsersFromUnified(r *zip.ReadCloser, client *openwebui.Client, overwr
 // RestoreGroup restores a group from a backup ZIP file
 // If overwrite is true, existing group with same ID will be replaced
 func RestoreGroup(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting group restore from: %s", zipPath)
 
 	// Extract group from ZIP
@@ -2168,6 +2203,9 @@ func restoreGroupsFromUnified(r *zip.ReadCloser, client *openwebui.Client, overw
 // RestoreFeedback restores a feedback from a backup ZIP file
 // If overwrite is true, existing feedback with same ID will be replaced
 func RestoreFeedback(client *openwebui.Client, zipPath string, overwrite bool) error {
+	if err := rejectOptInArchive(zipPath); err != nil {
+		return err
+	}
 	logrus.Infof("Starting feedback restore from: %s", zipPath)
 
 	// Extract feedback from ZIP
